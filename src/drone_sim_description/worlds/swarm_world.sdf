@@ -1,0 +1,226 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="swarm_world">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- GUI Setup -->
+    <gui fullscreen="0">
+      <!-- 3D Scene -->
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property type="bool" key="show_title_bar">false</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.4 0.4 0.4</ambient_light>
+        <background_color>0.5 0.7 0.9</background_color>
+        <camera_pose>-6 0 6 0 0.5 0</camera_pose>
+      </plugin>
+
+      <!-- Standard Gazebo Controls -->
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="show_title_bar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="show_title_bar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="show_title_bar" type="bool">false</property>
+        </gz-gui>
+        <target>alpha</target>
+        <follow_target>true</follow_target>
+        <follow_offset>-5 0 3</follow_offset>
+        <follow_pgain>0.05</follow_pgain>
+        <follow_dgain>0.0</follow_dgain>
+      </plugin>
+
+      <!-- Image Display (Master Drone POV) -->
+      <plugin filename="ImageDisplay" name="Image Display">
+        <gz-gui>
+          <title>Master Drone Camera</title>
+          <property key="state" type="string">docked</property>
+          <property type="double" key="weight">0.3</property>
+        </gz-gui>
+        <topic>/alpha/camera/image</topic>
+      </plugin>
+      <!-- Embedded Teleop Control Panel -->
+      <plugin filename="Teleop" name="Teleop">
+        <gz-gui>
+          <property key="state" type="string">docked</property>
+          <property key="width" type="double">250</property>
+          <property key="height" type="double">300</property>
+        </gz-gui>
+        <topic>/cmd_vel_keyboard</topic>
+      </plugin>
+    </gui>
+
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.5 0.7 0.9 1</background>
+      <sky></sky>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>200 200</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>200 200</size></plane></geometry>
+          <material>
+            <ambient>0.2 0.4 0.1 1</ambient>
+            <diffuse>0.2 0.4 0.1 1</diffuse>
+            <specular>0.0 0.0 0.0 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Obstacles matching the PSO obstacle avoidance logic -->
+    <!-- tree_1 -->
+    <model name="tree_1">
+      <static>true</static>
+      <pose>3 2 0 0 0 0</pose>
+      <link name="link">
+        <pose>0 0 1 0 0 0</pose>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.8</radius><length>2</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.8</radius><length>2</length></cylinder></geometry>
+          <material><ambient>0.4 0.2 0.0 1</ambient><diffuse>0.4 0.2 0.0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- tree_2 -->
+    <model name="tree_2">
+      <static>true</static>
+      <pose>5 -3 0 0 0 0</pose>
+      <link name="link">
+        <pose>0 0 1 0 0 0</pose>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.8</radius><length>2</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.8</radius><length>2</length></cylinder></geometry>
+          <material><ambient>0.4 0.2 0.0 1</ambient><diffuse>0.4 0.2 0.0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- tree_3 -->
+    <model name="tree_3">
+      <static>true</static>
+      <pose>7 3 0 0 0 0</pose>
+      <link name="link">
+        <pose>0 0 1 0 0 0</pose>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.8</radius><length>2</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.8</radius><length>2</length></cylinder></geometry>
+          <material><ambient>0.4 0.2 0.0 1</ambient><diffuse>0.4 0.2 0.0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- tree_4 -->
+    <model name="tree_4">
+      <static>true</static>
+      <pose>8 -1 0 0 0 0</pose>
+      <link name="link">
+        <pose>0 0 1 0 0 0</pose>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.8</radius><length>2</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.8</radius><length>2</length></cylinder></geometry>
+          <material><ambient>0.4 0.2 0.0 1</ambient><diffuse>0.4 0.2 0.0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Expanded Obstacles (Outside PSO tracked list) -->
+    <model name="large_box_1">
+      <static>true</static>
+      <pose>15 5 2 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>4 4 4</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>4 4 4</size></box></geometry>
+          <material><ambient>0.2 0.2 0.8 1</ambient><diffuse>0.2 0.2 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="large_box_2">
+      <static>true</static>
+      <pose>12 -7 2.5 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>3 8 5</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>3 8 5</size></box></geometry>
+          <material><ambient>0.8 0.2 0.2 1</ambient><diffuse>0.8 0.2 0.2 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="large_box_3">
+      <static>true</static>
+      <pose>22 0 4 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>6 6 8</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>6 6 8</size></box></geometry>
+          <material><ambient>0.8 0.8 0.2 1</ambient><diffuse>0.8 0.8 0.2 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

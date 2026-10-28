@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<robot name="swarm_drone" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:arg name="robot_name" default="drone"/>
+  <xacro:arg name="base_color" default="0.1 0.1 0.1 1"/>
+
+  <!-- Drone Body (Main Chassis) -->
+  <link name="base_link">
+    <!-- Center Sphere / Dome -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.08" />
+      </geometry>
+      <material name="dark_gray">
+        <color rgba="0.15 0.15 0.15 1"/>
+      </material>
+    </visual>
+    <!-- Lower body box (Dynamic Accent Color) -->
+    <visual>
+      <origin xyz="0 0 -0.02" rpy="0 0 0" />
+      <geometry>
+        <box size="0.12 0.12 0.04" />
+      </geometry>
+      <material name="accent_color">
+        <color rgba="$(arg base_color)"/>
+      </material>
+    </visual>
+    
+    <collision>
+      <geometry>
+        <sphere radius="0.1" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.0" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.02" />
+    </inertial>
+  </link>
+
+  <!-- Arms / Propellers to make it look like a drone -->
+  <xacro:macro name="rotor" params="prefix pos_x pos_y angle">
+    <!-- Arm connecting body to rotor -->
+    <link name="${prefix}_arm_link">
+      <visual>
+        <!-- Arm geometry: long thin box extending outward -->
+        <origin xyz="${pos_x/2} ${pos_y/2} 0.0" rpy="0 0 ${angle}" />
+        <geometry>
+          <box size="0.15 0.02 0.01" />
+        </geometry>
+        <material name="light_gray">
+          <color rgba="0.5 0.5 0.5 1"/>
+        </material>
+      </visual>
+    </link>
+    <joint name="${prefix}_arm_joint" type="fixed">
+      <parent link="base_link" />
+      <child link="${prefix}_arm_link" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+    </joint>
+
+    <!-- Rotor Base (Motor) -->
+    <link name="${prefix}_motor_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="0.02" length="0.03" />
+        </geometry>
+        <material name="silver">
+          <color rgba="0.8 0.8 0.8 1"/>
+        </material>
+      </visual>
+    </link>
+    <joint name="${prefix}_motor_joint" type="fixed">
+      <parent link="${prefix}_arm_link" />
+      <child link="${prefix}_motor_link" />
+      <origin xyz="${pos_x} ${pos_y} 0.015" rpy="0 0 0" />
+    </joint>
+
+    <!-- Rotor Disc (Propeller) -->
+    <link name="${prefix}_rotor_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="0.12" length="0.005" />
+        </geometry>
+        <material name="translucent_black">
+          <color rgba="0.1 0.1 0.1 0.3"/>
+        </material>
+      </visual>
+    </link>
+    <joint name="${prefix}_rotor_joint" type="fixed">
+      <parent link="${prefix}_motor_link" />
+      <child link="${prefix}_rotor_link" />
+      <origin xyz="0 0 0.015" rpy="0 0 0" />
+    </joint>
+  </xacro:macro>
+
+  <!-- Instantiate 4 rotors at 45 degree angles -->
+  <!-- distance approx 0.15 * sqrt(2) = 0.21 -->
+  <!-- Actually just pos_x=0.15, pos_y=0.15 means length=0.21. Angle is pi/4 -->
+  <xacro:rotor prefix="fl" pos_x="0.15" pos_y="0.15" angle="0.785398" />
+  <xacro:rotor prefix="fr" pos_x="0.15" pos_y="-0.15" angle="-0.785398" />
+  <xacro:rotor prefix="bl" pos_x="-0.15" pos_y="0.15" angle="2.35619" />
+  <xacro:rotor prefix="br" pos_x="-0.15" pos_y="-0.15" angle="-2.35619" />
+
+  <!-- Gazebo plugins -->
+  <gazebo>
+    <plugin
+      filename="gz-sim-velocity-control-system"
+      name="gz::sim::systems::VelocityControl">
+      <topic>/$(arg robot_name)/cmd_vel</topic>
+    </plugin>
+    
+    <!-- Pose publisher for feedback -->
+    <plugin
+      filename="gz-sim-pose-publisher-system"
+      name="gz::sim::systems::PosePublisher">
+      <publish_link_pose>true</publish_link_pose>
+      <publish_model_pose>true</publish_model_pose>
+      <publish_nested_model_pose>true</publish_nested_model_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <update_frequency>50</update_frequency>
+    </plugin>
+  </gazebo>
+
+  <!-- Gazebo Material Mappings -->
+  <gazebo reference="base_link">
+    <!-- Disable gravity for the abstract algorithmic drone so it acts like it has a perfect Z-hold -->
+    <gravity>false</gravity>
+    <sensor name="camera" type="camera">
+      <pose>0.1 0 0.05 0 0 0</pose>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      <always_on>1</always_on>
+      <update_rate>30</update_rate>
+      <visualize>true</visualize>
+      <topic>/$(arg robot_name)/camera/image</topic>
+    </sensor>
+  </gazebo>
+  
+  <gazebo reference="fl_rotor_link">
+    <material>Gazebo/Black</material>
+  </gazebo>
+  <gazebo reference="fr_rotor_link">
+    <material>Gazebo/Black</material>
+  </gazebo>
+  <gazebo reference="bl_rotor_link">
+    <material>Gazebo/Black</material>
+  </gazebo>
+  <gazebo reference="br_rotor_link">
+    <material>Gazebo/Black</material>
+  </gazebo>
+</robot>
